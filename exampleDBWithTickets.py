@@ -53,9 +53,18 @@ if __name__ == "__main__":
     ]
     overnight_ic_journey = overnight_ic_journeys[0]
     # get tickets
+    passengers = [
+        {
+            'age': 30,
+            'reduction_card': 0,
+        },
+        {
+            'age': 30,
+            'reduction_card': 2,
+        }
+    ]
     details = client.journey(overnight_ic_journey,
                              tickets=True,
                              first_class=False,
-                             age=30,
-                             reduction_card=0)
+                             passengers=passengers)
     pass

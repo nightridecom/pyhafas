@@ -204,9 +204,7 @@ class HafasClient:
     def journey(self, journey: Union[Journey, str],
                 tickets: Optional[bool] = False,
                 first_class: Optional[bool] = False,
-                age: Optional[int] = 30,
-                reduction_card: Optional[Literal[
-                    0, 1, 2, 3, 4, 9, 10, 11, 12, 13, 14, 15]] = 0) -> Journey:
+                passengers: Optional[List[Dict[str, int]]] = None) -> Journey:
         """
         Returns information about a specific journey by its ID
 
@@ -215,8 +213,7 @@ class HafasClient:
         :param journey: FPTF `Journey` object or journey ID
         :param tickets: (optional) If true, returns ticket information (only available for DBProfile)
         :param first_class: (optional) If true, returns first class ticket information (only available for DBProfile)
-        :param age: (optional) Age of the passenger (only available for DBProfile)
-        :param reduction_card: (optional) Reduction card of the passenger (only available for DBProfile)
+        :param passengers: (optional) List of passengers dicts with age and reduction card (only available for DBProfile)
         :return: FPTF `Journey` object with current/updated information
         """
         if not isinstance(journey, Journey):
@@ -226,8 +223,7 @@ class HafasClient:
                 body = self.profile.format_journey_request(journey,
                                                            tickets=True,
                                                            first_class=first_class,
-                                                           age=age,
-                                                           reduction_card=reduction_card)
+                                                           passengers=passengers)
                 res = self.profile.request(body)
                 return self.profile.parse_journey_request(res, tickets=True,
                                                           first_class=first_class)

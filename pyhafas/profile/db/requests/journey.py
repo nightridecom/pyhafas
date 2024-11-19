@@ -1,7 +1,7 @@
 import datetime
 import json
 from base64 import b64decode
-from typing import Optional, List, Literal
+from typing import Optional, List, Literal, Dict
 
 from pyhafas.profile.base import BaseJourneyRequest
 from pyhafas.profile.interfaces import JourneyRequestInterface, \
@@ -65,17 +65,14 @@ class DBJourneyRequest(BaseJourneyRequest, JourneyRequestInterface):
             journey: Journey,
             tickets: Optional[bool] = False,
             first_class: Optional[bool] = False,
-            age: Optional[int] = 30,
-            reduction_card: Optional[Literal[
-                0, 1, 2, 3, 4, 9, 10, 11, 12, 13, 14, 15]] = 0) -> dict:
+            passengers: Optional[List[Dict[str, int]]] = None) -> dict:
         """
         Creates the HaFAS request body for a journey request
 
         :param journey: Id of the journey (ctxRecon)
         :param tickets: Whether to include ticket prices
         :param first_class: Whether to include first class tickets
-        :param age: Age of the passenger
-        :param reduction_card: Reduction card of the passenger
+        :param passengers: List of passengers dicts with age and reduction card
         :return: Request body for HaFAS
         """
         body = {
@@ -84,17 +81,27 @@ class DBJourneyRequest(BaseJourneyRequest, JourneyRequestInterface):
             },
             'meth': 'Reconstruction'
         }
-        age_group = DBJourneyRequest.age_group_from_age(age)
         if tickets:
+            if passengers:
+                pax = [
+                    {
+                        'type': DBJourneyRequest.age_group_from_age(p['age']),
+                        'age': p['age'],
+                        'redtnCard': p['reduction_card']
+                    }
+                    for p in passengers
+                ]
+            else:
+                pax = [{
+                    'type': 'E',
+                    'age': 30,
+                    'redtnCard': 0
+                }]
             body['req']['trfReq'] = {
                 'jnyCl': 1 if first_class else 2,
                 'cType': 'PK',
                 'rType': 'DB-PE',
-                'tvlrProf': [{
-                    'type': age_group,
-                    'age': age,
-                    'redtnCard': reduction_card
-                }] # maximum 5 pax per request, apparently
+                'tvlrProf': pax  # maximum 5 pax per request, apparently
             }
         return body
 
