@@ -1,7 +1,7 @@
 import datetime
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union, Literal
 
-from pyhafas.profile import ProfileInterface
+from pyhafas.profile import ProfileInterface, DBProfile
 from pyhafas.types.fptf import Journey, Leg, Station, StationBoardLeg
 from pyhafas.types.nearby import LatLng
 from pyhafas.types.station_board_request import StationBoardRequestType
@@ -32,7 +32,8 @@ class HafasClient:
             max_trips: int = -1,
             duration: int = -1,
             products: Dict[str, bool] = {},
-            direction: Optional[Union[Station, str]] = None) -> List[StationBoardLeg]:
+            direction: Optional[Union[Station, str]] = None) -> List[
+        StationBoardLeg]:
         """
         Returns departing trips at the specified station
 
@@ -74,7 +75,8 @@ class HafasClient:
             max_trips: int = -1,
             duration: int = -1,
             products: Dict[str, bool] = {},
-            direction: Optional[Union[Station, str]] = None) -> List[StationBoardLeg]:
+            direction: Optional[Union[Station, str]] = None) -> List[
+        StationBoardLeg]:
         """
         Returns arriving trips at the specified station
 
@@ -199,18 +201,35 @@ class HafasClient:
 
         return self.profile.parse_journeys_request(res)
 
-    def journey(self, journey: Union[Journey, str]) -> Journey:
+    def journey(self, journey: Union[Journey, str],
+                tickets: Optional[bool] = False,
+                first_class: Optional[bool] = False,
+                passengers: Optional[List[Dict[str, int]]] = None) -> Journey:
         """
         Returns information about a specific journey by its ID
 
         Useful if you want to refresh the data of the trip, e.g. the real-time data.
 
         :param journey: FPTF `Journey` object or journey ID
+        :param tickets: (optional) If true, returns ticket information (only available for DBProfile)
+        :param first_class: (optional) If true, returns first class ticket information (only available for DBProfile)
+        :param passengers: (optional) List of passengers dicts with age and reduction card (only available for DBProfile)
         :return: FPTF `Journey` object with current/updated information
         """
         if not isinstance(journey, Journey):
             journey = Journey(journey)
-
+        if tickets:
+            if isinstance(self.profile, DBProfile):
+                body = self.profile.format_journey_request(journey,
+                                                           tickets=True,
+                                                           first_class=first_class,
+                                                           passengers=passengers)
+                res = self.profile.request(body)
+                return self.profile.parse_journey_request(res, tickets=True,
+                                                          first_class=first_class)
+            else:
+                raise ValueError(
+                    "The profile does not support ticket information")
         body = self.profile.format_journey_request(journey)
         res = self.profile.request(body)
 
